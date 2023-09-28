@@ -1,80 +1,135 @@
+<!--Modified from Angel book Example:
+https://www.cs.unm.edu/~angel/WebGL/7E/03/
+-->
+<!DOCTYPE html>
 <html>
-  <!-- This is a simple demo of WebGL that Draws a Triangle-->
   <head>
-    <meta charset="UTF-8" />
-    <title>Assignment</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>Rotating Square</title>
 
-    <!-- Vertex Shader-->
     <script id="vertexShader" type="x-shader/x-vertex">
-      attribute vec3 a_coords; //position attributeCoords
+      attribute vec4 aPosition;
+      uniform float uTheta;
       attribute vec3 a_color;  //color attribute
       varying vec3 vcolor;
-      void main(){
-          gl_Position = vec4(a_coords, 1);
+
+      void main() {
+          float s = sin(uTheta);
+          float c = cos(uTheta);
+
+          gl_Position.x = -s*aPosition.y + c*aPosition.x;
+          gl_Position.y =  s*aPosition.x + c*aPosition.y;
+          gl_Position.z = 0.0;
+          gl_Position.w = 1.0;
+
           vcolor = a_color;
+
       }
     </script>
 
-    <!--Fragment Shader-->
     <script id="fragmentShader" type="x-shader/x-fragment">
       precision mediump float;
       varying vec3 vcolor;
-      void main(){
-          gl_FragColor = vec4(vcolor,1);
+
+      void  main() {
+          gl_FragColor = vec4(vcolor, 1.0);
       }
     </script>
 
-    <script type="text/javascript">
+    <script>
       "use strict";
-      var gl; //the WebGL graphics context
-      var prog; //the shader program
+      var canvas;
+      var gl;
+      var program;
+      var rotationContinue = false;
+      var theta = 0.0;
+      var thetaLoc;
 
-      var attributeCoordsLoc; //location of the attribute named "a_coords"
-      var bufferCoords; // vertex buffer object (VBO) holding the values of coords
+      window.onload = function init() {
+        canvas = document.getElementById("gl-canvas");
+        gl = canvas.getContext("webgl");
+        if (!gl) alert("WebGL isn't available");
 
-      var attributeColorLoc; //Location of the attribute name "a_color"
-      var bufferColor; //vertex buffer object VBO holding values for color
-
-      /*  Draws the content of the canvas, in this case, the RGB color triangle.*/
-      function draw() {
+        //  Configure WebGL
+        gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(0, 0, 0, 1); // specify the color to be used for clearing
-        gl.clear(gl.COLOR_BUFFER_BIT); // clear the canvas (to black)
+        gl.clear(gl.COLOR_BUFFER_BIT);
 
-        /*associate variables in shader program*/
-        gl.useProgram(prog);
-        attributeCoordsLoc = gl.getAttribLocation(prog, "a_coords");
-        bufferCoords = gl.createBuffer();
-        attributeColorLoc = gl.getAttribLocation(prog, "a_color");
-        bufferColor = gl.createBuffer();
+        //  Load shaders and initialize attribute buffers
+        initGL();
 
-        /* Set up values for the "a_coords" attribute */
-        var coords = new Float32Array([
+        var vertices = [
           -0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0, -0.2, -0.2, 0, 0.2, -0.2, 0, 0.2, 0,
           0, -0.2, 0, 0,
-        ]);
+        ];
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufferCoords);
-        gl.bufferData(gl.ARRAY_BUFFER, coords, gl.STREAM_DRAW);
-        gl.vertexAttribPointer(attributeCoordsLoc, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(attributeCoordsLoc);
+        var color = [
+          124, 252, 0, 124, 252, 0, 124, 252, 0, 165, 1, 1, 0, 0, 1, 133, 1, 1,
+          1, 1, 1,
+        ];
 
-        /* Set up values for the "a_color" attribute */
-        var color = new Float32Array([
-          124, 252, 0, 124, 252, 0, 124, 252, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1,
-        ]);
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufferColor);
-        gl.bufferData(gl.ARRAY_BUFFER, color, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(attributeColorLoc, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(attributeColorLoc);
+        // Load the data into the GPU\
+        var bufferId = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array(vertices),
+          gl.STATIC_DRAW
+        );
 
-        /* Draw the triangle. */
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, 3);
+        // Associate out shader variables with our data bufferData
+
+        var positionLoc = gl.getAttribLocation(program, "aPosition");
+        gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLoc);
+
+        var colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(color), gl.STATIC_DRAW);
+
+        var colorLoc = gl.getAttribLocation(program, "a_color");
+        gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(colorLoc);
+
+        thetaLoc = gl.getUniformLocation(program, "uTheta");
+
+        window.addEventListener("keydown", function (event) {
+          var pressedKey = event.key.toLowerCase();
+          if (pressedKey === "r") {
+            rotationContinue = true;
+            render();
+          }
+
+          if (pressedKey === "s") {
+            rotationContinue = false;
+          }
+        });
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
         gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
+        // render();
+      };
+
+      function render() {
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        theta += 1 * 0.1; //theta is changed by rotation direction
+        gl.uniform1f(thetaLoc, theta);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+        gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
+        if (rotationContinue === true) {
+          setTimeout(function () {
+            requestAnimationFrame(render);
+          }, 100);
+        }
       }
 
-      /* Creates a program for use in the WebGL context gl, and returns the
-            identifier for that program. */
+      /**
+       * Creates a program for use in the WebGL context gl, and returns the
+       * identifier for that program.  If an error occurs while compiling or
+       * linking the program, an exception of type String is thrown.  The error
+       * string contains the compilation or linking error.  If no error occurs,
+       * the program identifier is the return value of the function.
+       */
       function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
         let vsh = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vsh, vertexShaderSource);
@@ -104,55 +159,24 @@
         return prog;
       }
 
-      /* Initialize the WebGL graphics context */
+      /**
+       * Initialize the WebGL graphics context
+       */
       function initGL() {
         const vertexShaderSource = document.getElementById("vertexShader").text;
         const fragmentShaderSource =
           document.getElementById("fragmentShader").text;
-        prog = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+        program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+        gl.useProgram(program);
       }
-
-      /** Initialize the program, the function is called after the page is loaded*/
-      function init() {
-        try {
-          let canvas = document.getElementById("webglcanvas");
-          let options = {
-            // no need for alpha channel or depth buffer in this program
-            alpha: false,
-            depth: false,
-          };
-          gl = canvas.getContext("webgl", options);
-          // (Note that this page could use "webgl2" with no further modification.)
-          if (!gl) {
-            throw "Browser does not support WebGL";
-          }
-        } catch (e) {
-          document.getElementById("canvas-holder").innerHTML =
-            "<p>Sorry, could not get a WebGL graphics context.</p>";
-          return;
-        }
-        try {
-          initGL(); // initialize the WebGL graphics context
-        } catch (e) {
-          document.getElementById("canvas-holder").innerHTML =
-            "<p>Sorry, could not initialize the WebGL graphics context: " +
-            e.message +
-            "</p>";
-          return;
-        }
-        draw(); // draw the image
-      }
-
-      window.onload = init; // Arrange for init() to be called when the page has been loaded.
     </script>
   </head>
   <body>
-    <noscript>
-      <p><b> Sorry, but this page requires JavaScript.</b></p></noscript
-    >
     <div id="canvas-holder">
       <center>
-        <canvas id="webglcanvas" width="800" height="800"> </canvas>
+        <canvas id="gl-canvas" width="800" height="800">
+          Oops ... your browser doesn't support the HTML5 canvas element
+        </canvas>
       </center>
     </div>
   </body>
