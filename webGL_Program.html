@@ -6,170 +6,6 @@ https://www.cs.unm.edu/~angel/WebGL/7E/03/
   <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <title>Rotating Square</title>
-
-    <script id="vertexShader" type="x-shader/x-vertex">
-      attribute vec4 aPosition;
-      uniform float uTheta;
-      attribute vec3 a_color;  //color attribute
-      varying vec3 vcolor;
-
-      void main() {
-          float s = sin(uTheta);
-          float c = cos(uTheta);
-
-          gl_Position.x = -s*aPosition.y + c*aPosition.x;
-          gl_Position.y =  s*aPosition.x + c*aPosition.y;
-          gl_Position.z = 0.0;
-          gl_Position.w = 1.0;
-
-          vcolor = a_color;
-
-      }
-    </script>
-
-    <script id="fragmentShader" type="x-shader/x-fragment">
-      precision mediump float;
-      varying vec3 vcolor;
-
-      void  main() {
-          gl_FragColor = vec4(vcolor, 1.0);
-      }
-    </script>
-
-    <script>
-      "use strict";
-      var canvas;
-      var gl;
-      var program;
-      var rotationContinue = false;
-      var theta = 0.0;
-      var thetaLoc;
-
-      window.onload = function init() {
-        canvas = document.getElementById("gl-canvas");
-        gl = canvas.getContext("webgl");
-        if (!gl) alert("WebGL isn't available");
-
-        //  Configure WebGL
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clearColor(0, 0, 0, 1); // specify the color to be used for clearing
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
-        //  Load shaders and initialize attribute buffers
-        initGL();
-
-        var vertices = [
-          -0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0, -0.2, -0.2, 0, 0.2, -0.2, 0, 0.2, 0,
-          0, -0.2, 0, 0,
-        ];
-
-        var color = [
-          124, 252, 0, 124, 252, 0, 124, 252, 0, 165, 1, 1, 0, 0, 1, 133, 1, 1,
-          1, 1, 1,
-        ];
-
-        // Load the data into the GPU\
-        var bufferId = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
-          new Float32Array(vertices),
-          gl.STATIC_DRAW
-        );
-
-        // Associate out shader variables with our data bufferData
-
-        var positionLoc = gl.getAttribLocation(program, "aPosition");
-        gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(positionLoc);
-
-        var colorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(color), gl.STATIC_DRAW);
-
-        var colorLoc = gl.getAttribLocation(program, "a_color");
-        gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(colorLoc);
-
-        thetaLoc = gl.getUniformLocation(program, "uTheta");
-
-        window.addEventListener("keydown", function (event) {
-          var pressedKey = event.key.toLowerCase();
-          if (pressedKey === "r") {
-            rotationContinue = true;
-            render();
-          }
-
-          if (pressedKey === "s") {
-            rotationContinue = false;
-          }
-        });
-
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
-        gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
-        // render();
-      };
-
-      function render() {
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        theta += 1 * 0.1; //theta is changed by rotation direction
-        gl.uniform1f(thetaLoc, theta);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
-        gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
-        if (rotationContinue === true) {
-          setTimeout(function () {
-            requestAnimationFrame(render);
-          }, 100);
-        }
-      }
-
-      /**
-       * Creates a program for use in the WebGL context gl, and returns the
-       * identifier for that program.  If an error occurs while compiling or
-       * linking the program, an exception of type String is thrown.  The error
-       * string contains the compilation or linking error.  If no error occurs,
-       * the program identifier is the return value of the function.
-       */
-      function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
-        let vsh = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vsh, vertexShaderSource);
-        gl.compileShader(vsh);
-        if (!gl.getShaderParameter(vsh, gl.COMPILE_STATUS)) {
-          throw new Error(
-            "Error in vertex shader:  " + gl.getShaderInfoLog(vsh)
-          );
-        }
-        let fsh = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fsh, fragmentShaderSource);
-        gl.compileShader(fsh);
-        if (!gl.getShaderParameter(fsh, gl.COMPILE_STATUS)) {
-          throw new Error(
-            "Error in fragment shader:  " + gl.getShaderInfoLog(fsh)
-          );
-        }
-        let prog = gl.createProgram();
-        gl.attachShader(prog, vsh);
-        gl.attachShader(prog, fsh);
-        gl.linkProgram(prog);
-        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-          throw new Error(
-            "Link error in program:  " + gl.getProgramInfoLog(prog)
-          );
-        }
-        return prog;
-      }
-
-      /**
-       * Initialize the WebGL graphics context
-       */
-      function initGL() {
-        const vertexShaderSource = document.getElementById("vertexShader").text;
-        const fragmentShaderSource =
-          document.getElementById("fragmentShader").text;
-        program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-        gl.useProgram(program);
-      }
-    </script>
   </head>
   <body>
     <div id="canvas-holder">
@@ -180,4 +16,223 @@ https://www.cs.unm.edu/~angel/WebGL/7E/03/
       </center>
     </div>
   </body>
+
+  <script id="vertexShader" type="x-shader/x-vertex">
+    attribute vec4 aPosition;
+    uniform float uTheta;
+    uniform float newX;
+    uniform float newY;
+    attribute vec3 a_color;  //color attribute
+    varying vec3 vcolor;
+
+
+    void main() {
+        float s = sin(uTheta);
+        float c = cos(uTheta);
+
+        gl_Position.x = (-s*aPosition.y + c*aPosition.x) + newX ;
+        gl_Position.y =  (s*aPosition.x + c*aPosition.y) + newY;
+        gl_Position.z = 0.0;
+        gl_Position.w = 1.0;
+
+        vcolor = a_color;
+
+    }
+  </script>
+
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec3 vcolor;
+
+    void  main() {
+        gl_FragColor = vec4(vcolor, 1.0);
+    }
+  </script>
+
+  <script>
+    "use strict";
+    var canvas;
+    var gl;
+    var program;
+    var rotationContinue = false;
+    var theta = 0.0;
+    var thetaLoc;
+
+    window.onload = function init() {
+      initGL();
+      console.log("init done");
+
+      //  Load shaders and initialize attribute buffers
+      initGL();
+
+      var vertices = [
+        -0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0, -0.2, -0.2, 0, 0.2, -0.2, 0, 0.2, 0,
+        0, -0.2, 0, 0,
+      ];
+
+      var color = [
+        124, 252, 0, 124, 252, 0, 124, 252, 0, 165, 1, 1, 0, 0, 1, 133, 1, 1, 1,
+        1, 1,
+      ];
+
+      // Load the data into the GPU\
+      var bufferId = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(vertices),
+        gl.STATIC_DRAW
+      );
+
+      // Associate out shader variables with our data bufferData
+
+      var positionLoc = gl.getAttribLocation(program, "aPosition");
+      gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(positionLoc);
+
+      var colorBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(color), gl.STATIC_DRAW);
+
+      var colorLoc = gl.getAttribLocation(program, "a_color");
+      gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(colorLoc);
+
+      thetaLoc = gl.getUniformLocation(program, "uTheta");
+
+      var translationXLoc = gl.getUniformLocation(program, "newX");
+      var translationYLoc = gl.getUniformLocation(program, "newY");
+
+      canvas.addEventListener("mousedown", function (event) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+
+        var newFirstPointX = ((2 * event.offsetX) / canvas.width - 1).toFixed(
+          1
+        );
+        var newFirstPointY = (
+          (2 * (canvas.height - event.offsetY)) / canvas.height -
+          1
+        ).toFixed(1);
+
+        console.log(newFirstPointX);
+
+        // var newVertices = [
+        //   newFirstPointX - 0.2,
+        //   newFirstPointY,
+        //   0,
+        //   newFirstPointX + 0.2,
+        //   newFirstPointY,
+        //   0,
+        //   newFirstPointX,
+        //   newFirstPointY + 0.2,
+        //   0,
+        //   newFirstPointX - 0.2,
+        //   newFirstPointY - 0.2,
+        //   0,
+        //   newFirstPointX + 0.2,
+        //   newFirstPointY - 0.2,
+        //   0,
+        //   newFirstPointX + 0.2,
+        //   newFirstPointY - 0.2,
+        //   0,
+        //   newFirstPointX,
+        //   newFirstPointY - 0.2,
+        //   0,
+        // ];
+        gl.uniform1f(translationXLoc, newFirstPointX);
+        gl.uniform1f(translationYLoc, newFirstPointY);
+        drawNew();
+      });
+
+      function drawNew() {
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+        gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
+        requestAnimationFrame(drawNew);
+      }
+
+      window.addEventListener("keydown", function (event) {
+        var pressedKey = event.key.toLowerCase();
+        if (pressedKey === "r") {
+          rotationContinue = true;
+          render();
+        }
+
+        if (pressedKey === "s") {
+          rotationContinue = false;
+        }
+      });
+
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+      gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
+    };
+
+    function render() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      theta += 1 * 0.1; //theta is changed by rotation direction
+      gl.uniform1f(thetaLoc, theta);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+      gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
+      if (rotationContinue === true) {
+        setTimeout(function () {
+          requestAnimationFrame(render);
+        }, 100);
+      }
+    }
+
+    /**
+     * Creates a program for use in the WebGL context gl, and returns the
+     * identifier for that program.  If an error occurs while compiling or
+     * linking the program, an exception of type String is thrown.  The error
+     * string contains the compilation or linking error.  If no error occurs,
+     * the program identifier is the return value of the function.
+     */
+    function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
+      let vsh = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vsh, vertexShaderSource);
+      gl.compileShader(vsh);
+      if (!gl.getShaderParameter(vsh, gl.COMPILE_STATUS)) {
+        throw new Error("Error in vertex shader:  " + gl.getShaderInfoLog(vsh));
+      }
+      let fsh = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fsh, fragmentShaderSource);
+      gl.compileShader(fsh);
+      if (!gl.getShaderParameter(fsh, gl.COMPILE_STATUS)) {
+        throw new Error(
+          "Error in fragment shader:  " + gl.getShaderInfoLog(fsh)
+        );
+      }
+      let prog = gl.createProgram();
+      gl.attachShader(prog, vsh);
+      gl.attachShader(prog, fsh);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        throw new Error(
+          "Link error in program:  " + gl.getProgramInfoLog(prog)
+        );
+      }
+      return prog;
+    }
+
+    /**
+     * Initialize the WebGL graphics context
+     */
+    function initGL() {
+      canvas = document.getElementById("gl-canvas");
+      console.log(canvas);
+      gl = canvas.getContext("webgl");
+      if (!gl) alert("WebGL isn't available");
+
+      //  Configure WebGL
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 1); // specify the color to be used for clearing
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      const vertexShaderSource = document.getElementById("vertexShader").text;
+      const fragmentShaderSource =
+        document.getElementById("fragmentShader").text;
+      program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+      gl.useProgram(program);
+    }
+  </script>
 </html>
