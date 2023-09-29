@@ -104,7 +104,7 @@ https://www.cs.unm.edu/~angel/WebGL/7E/03/
       var translationYLoc = gl.getUniformLocation(program, "newY");
 
       canvas.addEventListener("mousedown", function (event) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+        // gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
 
         var newFirstPointX = ((2 * event.offsetX) / canvas.width - 1).toFixed(
           1
@@ -115,40 +115,32 @@ https://www.cs.unm.edu/~angel/WebGL/7E/03/
         ).toFixed(1);
 
         console.log(newFirstPointX);
+        console.log(newFirstPointY);
 
-        // var newVertices = [
-        //   newFirstPointX - 0.2,
-        //   newFirstPointY,
-        //   0,
-        //   newFirstPointX + 0.2,
-        //   newFirstPointY,
-        //   0,
-        //   newFirstPointX,
-        //   newFirstPointY + 0.2,
-        //   0,
-        //   newFirstPointX - 0.2,
-        //   newFirstPointY - 0.2,
-        //   0,
-        //   newFirstPointX + 0.2,
-        //   newFirstPointY - 0.2,
-        //   0,
-        //   newFirstPointX + 0.2,
-        //   newFirstPointY - 0.2,
-        //   0,
-        //   newFirstPointX,
-        //   newFirstPointY - 0.2,
-        //   0,
-        // ];
         gl.uniform1f(translationXLoc, newFirstPointX);
         gl.uniform1f(translationYLoc, newFirstPointY);
-        drawNew();
+        drawNew(newFirstPointX, newFirstPointY);
       });
 
-      function drawNew() {
+      function drawNew(newFirstPointX, newFirstPointY) {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
         gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
-        requestAnimationFrame(drawNew);
+
+        // // reflection
+        // var reflectX = newFirstPointY - 0.6;
+        // var reflectY = newFirstPointX + 0.6;
+
+        // console.log(reflectX);
+        // console.log(newFirstPointY);
+
+        gl.uniform1f(translationXLoc, newFirstPointY);
+        gl.uniform1f(translationYLoc, newFirstPointX);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+        gl.drawArrays(gl.TRIANGLE_FAN, 3, 4);
+
+        gl.uniform1f(translationXLoc, newFirstPointX);
+        gl.uniform1f(translationYLoc, newFirstPointY);
       }
 
       window.addEventListener("keydown", function (event) {
